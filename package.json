@@ -1,6 +1,6 @@
 {
   "name": "@remvst/asset-catalog",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "bin": {
     "generate-image-catalog": "./lib/generate-image-catalog.js",
@@ -10,7 +10,8 @@
     "build": "rm -rf lib && tsc",
     "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/images.ts",
     "test:sounds": "ts-node src/generate-sound-catalog.ts --assetDir=./testData/sounds --outFile=testOut/sounds.ts",
-    "test": "npm run test:images && npm run test:sounds"
+    "test": "npm run test:images && npm run test:sounds",
+    "prepublishOnly": "npm i && npm run build"
   },
   "author": "Rémi Vansteelandt",
   "license": "UNLICENSED",
