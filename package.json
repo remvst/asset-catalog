@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "bin": {
-    "generate-image-catalog": "./lib/generate-image-catalog.js"
+    "generate-image-catalog": "./lib/generate-image-catalog.js",
+    "generate-sound-catalog": "./lib/generate-sound-catalog.js"
   },
   "scripts": {
     "build": "rm -rf lib && tsc",
