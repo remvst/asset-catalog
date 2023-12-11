@@ -10,11 +10,11 @@ import { hideBin } from 'yargs/helpers';
 type Tree = Map<string, TreeOrPath>;
 type TreeOrPath = Tree | string;
 
-function importName(png: string): string {
+function importName(assetDir: string, png: string): string {
     let importName = png;
     importName = resolve(png);
 
-    const prefix = resolve(__dirname + '/../../assets/textures/game/');
+    const prefix = resolve(assetDir);
     const prefixIndex = importName.indexOf(prefix);
     if (prefixIndex >= 0) {
         importName = importName.slice(prefixIndex + prefix.length);
@@ -38,7 +38,7 @@ function generatedTemplateInterface(tree: Tree, name: string, indent: string = '
     return generated;
 }
 
-async function generatedCreateCatalogFunction(tree: Tree): Promise<string> {
+async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Promise<string> {
     async function rec(tree: Tree, indent: string = '') {
         let generated = '{\n';
         for (const [subname, item] of tree.entries()) {
@@ -49,7 +49,7 @@ async function generatedCreateCatalogFunction(tree: Tree): Promise<string> {
                 const dimensions = sizeOf(item);
                 const stats = await fs.stat(item);
                 generated += indent + `    ${lowerCamelize(subname)}: createItem({
-                    path: ${importName(item)},
+                    path: ${importName(assetDir, item)},
                     width: ${dimensions.width},
                     height: ${dimensions.height},
                     size: ${stats.size},
@@ -100,7 +100,7 @@ async function main() {
 
     for (const png of pngs) {
         let subtree = tree;
-        for (const category of categoryPath(png)) {
+        for (const category of categoryPath(argv.assetDir, png)) {
             if (!subtree.has(category)) {
                 subtree.set(category, new Map());
             }
@@ -109,9 +109,8 @@ async function main() {
 
         subtree.set(basename(png).replace('.png', ''), png);
 
-        const importPath = relative(__dirname + '/../assets', png).replace(/\\/g, '/');
-        console.log(importPath);
-        imports.push(`import ${importName(png)} from '${importPath}';`);
+        const importPath = relative(argv.assetDir, png).replace(/\\/g, '/');
+        imports.push(`import ${importName(argv.assetDir, png)} from './${importPath}';`);
     }
 
     let generatedFileContent = '';
@@ -119,7 +118,7 @@ async function main() {
     generatedFileContent += '\n\n';
     generatedFileContent += 'export type TextureCatalog<T> = ' + generatedTemplateInterface(tree, 'TextureCatalog');
     generatedFileContent += '\n\n';
-    generatedFileContent += await generatedCreateCatalogFunction(tree);
+    generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree);
 
     await fs.writeFile(generatedTs, generatedFileContent);
 }

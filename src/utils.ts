@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import { promises as fs } from 'fs';
-import { dirname } from 'path';
+import { dirname, relative } from 'path';
 
 export async function allFiles(path: string): Promise<string[]> {
     const files = await fs.readdir(path);
@@ -56,15 +56,17 @@ export function camelize(str: string) {
     return str.split(/[^a-z0-9]/gi).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
 }
 
-export function lowerCamelize(str: string) {
+export function lowerCamelize(str: string): string {
     const camelized = module.exports.camelize(str);
     return camelized.slice(0, 1).toLowerCase() + camelized.slice(1);
 }
 
 
-export function categoryPath(png: string): string[] {
-    const prefix = '/textures/game/';
-    const prefixIndex = png.indexOf(prefix);
-    const trimmedDir = dirname(png.slice(prefixIndex + prefix.length));
-    return trimmedDir.split('/').map(component => lowerCamelize(component));
+export function categoryPath(assetDir: string, png: string): string[] {
+    const dir = dirname(png);
+    const trimmedDir = relative(assetDir, dir);
+    return trimmedDir
+        .split('/')
+        .map(component => lowerCamelize(component))
+        .filter(component => component.length > 0);
 }

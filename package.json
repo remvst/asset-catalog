@@ -2,13 +2,12 @@
   "name": "@remvst/asset-catalog",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/index.js",
   "bin": {
-    "asset-catalog": "./lib/index.js"
+    "generate-image-catalog": "./lib/generate-image-catalog.js"
   },
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "ts-node src/index.ts --assetDir=./testData --outFile=testOut/catalog.ts"
+    "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/catalog.ts"
   },
   "author": "Rémi Vansteelandt",
   "license": "UNLICENSED",
