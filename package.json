@@ -1,0 +1,25 @@
+{
+  "name": "@remvst/asset-catalog",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "bin": {
+    "asset-catalog": "./lib/index.js"
+  },
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "ts-node src/index.ts --assetDir=./testData --outFile=testOut/catalog.ts"
+  },
+  "author": "Rémi Vansteelandt",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "image-size": "^1.0.2",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.5",
+    "@types/yargs": "^17.0.32",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
