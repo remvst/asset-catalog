@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/catalog.ts"
+    "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/images.ts",
+    "test:sounds": "ts-node src/generate-sound-catalog.ts --assetDir=./testData/sounds --outFile=testOut/sounds.ts"
   },
   "author": "Rémi Vansteelandt",
   "license": "UNLICENSED",
