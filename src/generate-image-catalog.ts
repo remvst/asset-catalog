@@ -3,7 +3,7 @@
 import { promises as fs } from 'fs';
 import sizeOf from 'image-size';
 import { sanitize, allFiles, lowerCamelize } from './utils';
-import { resolve, relative, dirname, extname } from 'path';
+import { resolve, relative, dirname, extname, basename } from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Tree, generateTree } from './tree';
@@ -29,7 +29,8 @@ function generatedTemplateInterface(tree: Tree, name: string, indent: string = '
             const generatedSub = generatedTemplateInterface(item, subname, indent + '    ');
             generated += indent + `    ${lowerCamelize(subname)}: ${generatedSub}`;
         } else {
-            generated += indent + `    ${lowerCamelize(subname)}: T,\n`;
+            const withoutExt = basename(subname, extname(subname));
+            generated += indent + `    ${lowerCamelize(withoutExt)}: T,\n`;
         }
     }
     generated += indent + '}\n';
@@ -46,7 +47,8 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
             } else {
                 const dimensions = sizeOf(item);
                 const stats = await fs.stat(item);
-                generated += indent + `    ${lowerCamelize(subname)}: createItem({
+                const withoutExt = basename(subname, extname(subname));
+                generated += indent + `    ${lowerCamelize(withoutExt)}: createItem({
                     path: ${importName(assetDir, item)},
                     width: ${dimensions.width},
                     height: ${dimensions.height},

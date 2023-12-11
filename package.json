@@ -1,6 +1,6 @@
 {
   "name": "@remvst/asset-catalog",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "bin": {
     "generate-image-catalog": "./lib/generate-image-catalog.js",
