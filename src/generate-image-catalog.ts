@@ -3,7 +3,7 @@
 import { promises as fs } from 'fs';
 import sizeOf from 'image-size';
 import { sanitize, basename, extension, allFiles, lowerCamelize, categoryPath } from './utils';
-import { resolve, relative } from 'path';
+import { resolve, relative, dirname } from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -109,7 +109,7 @@ async function main() {
 
         subtree.set(basename(png).replace('.png', ''), png);
 
-        const importPath = relative(argv.assetDir, png).replace(/\\/g, '/');
+        const importPath = relative(dirname(argv.outFile), png).replace(/\\/g, '/');
         imports.push(`import ${importName(argv.assetDir, png)} from './${importPath}';`);
     }
 
