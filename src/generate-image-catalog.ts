@@ -6,9 +6,7 @@ import { sanitize, basename, extension, allFiles, lowerCamelize, categoryPath } 
 import { resolve, relative, dirname } from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-
-type Tree = Map<string, TreeOrPath>;
-type TreeOrPath = Tree | string;
+import { Tree, generateTree } from './tree';
 
 function importName(assetDir: string, png: string): string {
     let importName = png;
@@ -95,20 +93,9 @@ async function main() {
     const pngs = files.filter(file => extension(file) === 'png');
 
     const imports = [];
-
-    const tree = new Map();
+    const tree = await generateTree(argv.assetDir, pngs);
 
     for (const png of pngs) {
-        let subtree = tree;
-        for (const category of categoryPath(argv.assetDir, png)) {
-            if (!subtree.has(category)) {
-                subtree.set(category, new Map());
-            }
-            subtree = subtree.get(category);
-        }
-
-        subtree.set(basename(png).replace('.png', ''), png);
-
         const importPath = relative(dirname(argv.outFile), png).replace(/\\/g, '/');
         imports.push(`import ${importName(argv.assetDir, png)} from './${importPath}';`);
     }
