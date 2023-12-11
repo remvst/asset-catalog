@@ -71,8 +71,6 @@ async function main() {
         defs.get(category)!.get(filenameWithoutExt)!.add(sound);
     }
 
-    console.log(defs);
-
     const imports = [];
     const definitions = [];
     const funcs = [];
