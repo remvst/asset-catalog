@@ -2,8 +2,8 @@
 
 import { promises as fs } from 'fs';
 import sizeOf from 'image-size';
-import { sanitize, basename, extension, allFiles, lowerCamelize, categoryPath } from './utils';
-import { resolve, relative, dirname } from 'path';
+import { sanitize, allFiles, lowerCamelize } from './utils';
+import { resolve, relative, dirname, extname } from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Tree, generateTree } from './tree';
@@ -90,7 +90,7 @@ async function main() {
     } catch (e) {}
 
     const files = await allFiles(texturesRoot);
-    const pngs = files.filter(file => extension(file) === 'png');
+    const pngs = files.filter(file => extname(file) === '.png');
 
     const imports = [];
     const tree = await generateTree(argv.assetDir, pngs);

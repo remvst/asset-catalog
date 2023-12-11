@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import { promises as fs } from 'fs';
 import { dirname, relative } from 'path';
 
@@ -22,34 +21,8 @@ export async function allFiles(path: string): Promise<string[]> {
     return res;
 }
 
-export function extension(path: string): string {
-    const filename = path.slice(path.lastIndexOf('/') + 1);
-    return filename.slice(filename.lastIndexOf('.') + 1);
-}
-
-export function basename(path: string): string {
-    const filename = path.slice(path.lastIndexOf('/') + 1);
-    return filename.slice(0, filename.lastIndexOf('.'));
-}
-
 export function sanitize(string: string): string {
     return string.replace(/[^a-zA-Z0-9]/g, '_');   
-}
-
-export function execShellCommand(cmd: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        exec(cmd, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(stdout? stdout : stderr);
-        });
-    });
-}
-
-export function toUpperSnakeCase(str: string) {
-    return str.toUpperCase().replace(/[^A-Z0-9]/g, '_');
 }
 
 export function camelize(str: string) {

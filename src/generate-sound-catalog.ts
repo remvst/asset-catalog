@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { promises as fs } from 'fs';
 import { sanitize, allFiles, categoryPath } from './utils';
 import yargs from 'yargs/yargs';
@@ -51,9 +53,6 @@ async function main() {
     const files = await allFiles(argv.assetDir);
     const sounds = files.filter(file => extensions.indexOf(extname(file)) >= 0);
 
-    console.log(sounds);
-
-    // const categories = new Map<string, Set<string>>();
     const defs = new Map<string, Map<string, Set<string>>>();
 
     for (const sound of sounds) {
