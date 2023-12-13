@@ -3,4 +3,5 @@ nyc.config.js
 coverage/
 .nyc_output/
 .github
-testData
+testData/
+testOut/
