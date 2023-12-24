@@ -9,31 +9,31 @@ import { dirname, extname, basename, relative } from 'path';
 async function main() {
     const argv = await yargs(hideBin(process.argv))
         .options({
-            'outFile': { 
-                type: 'string', 
-                default: '.', 
-                alias: 'o', 
+            'outFile': {
+                type: 'string',
+                default: '.',
+                alias: 'o',
                 describe: 'Directory to generate the files into',
             },
-            'assetDir': { 
-                type: 'string', 
-                default: './package.json', 
-                alias: 'a', 
+            'assetDir': {
+                type: 'string',
+                default: './package.json',
+                alias: 'a',
                 describe: 'package.json file to use for the version',
             },
-            'wav': { 
-                type: 'boolean', 
-                default: false, 
+            'wav': {
+                type: 'boolean',
+                default: false,
                 describe: 'Include .wav files',
             },
-            'ogg': { 
-                type: 'boolean', 
-                default: true, 
+            'ogg': {
+                type: 'boolean',
+                default: true,
                 describe: 'Include .ogg files',
             },
-            'mp3': { 
-                type: 'boolean', 
-                default: true, 
+            'mp3': {
+                type: 'boolean',
+                default: true,
                 describe: 'Include .mp3 files',
             },
         })
@@ -103,7 +103,7 @@ async function main() {
             let totalFileSize = 0;
             for (const soundFile of files) {
                 const importName = sanitize(soundFile);
-                imports.push(`import ${importName} from '${relative(dirname(argv.outFile), soundFile)}';`);
+                imports.push(`import ${importName} from '${relative(dirname(argv.outFile), soundFile).replace(/\\/g, '/')}';`);
                 func += `                ${importName},\n`;
                 const stats = await fs.stat(soundFile);
                 totalFileSize += stats.size;

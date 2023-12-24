@@ -22,7 +22,7 @@ export async function allFiles(path: string): Promise<string[]> {
 }
 
 export function sanitize(string: string): string {
-    return string.replace(/[^a-zA-Z0-9]/g, '_');   
+    return string.replace(/[^a-zA-Z0-9]/g, '_');
 }
 
 export function camelize(str: string) {
@@ -33,7 +33,6 @@ export function lowerCamelize(str: string): string {
     const camelized = module.exports.camelize(str);
     return camelized.slice(0, 1).toLowerCase() + camelized.slice(1);
 }
-
 
 export function categoryPath(assetDir: string, png: string): string[] {
     const dir = dirname(png);
