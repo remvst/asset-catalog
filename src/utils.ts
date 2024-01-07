@@ -38,7 +38,7 @@ export function categoryPath(assetDir: string, png: string): string[] {
     const dir = dirname(png);
     const trimmedDir = relative(assetDir, dir);
     return trimmedDir
-        .split('/')
+        .split(/[\/\\]/g)
         .map(component => lowerCamelize(component))
         .filter(component => component.length > 0);
 }
