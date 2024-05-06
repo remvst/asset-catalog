@@ -85,6 +85,8 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, spri
 async function createSpritesheet(tree: Tree, outFile: string): Promise<SpritesheetResult> {
     const bins: (pack.Bin & {path: string})[] = [];
 
+    const padding = 1;
+
     function generateBins(tree: Tree) {
         for (const item of tree.values()) {
             if (item instanceof Map) {
@@ -92,8 +94,8 @@ async function createSpritesheet(tree: Tree, outFile: string): Promise<Spriteshe
             } else {
                 const dimensions = sizeOf(item);
                 bins.push({
-                    width: dimensions.width!,
-                    height: dimensions.height!,
+                    width: dimensions.width! + padding * 2,
+                    height: dimensions.height! + padding * 2,
                     path: resolve(item),
                 });
             }
@@ -109,7 +111,7 @@ async function createSpritesheet(tree: Tree, outFile: string): Promise<Spriteshe
 
     for (const item of packed.items) {
         const image = await loadImage(item.item.path);
-        ctx.drawImage(image, item.x, item.y);
+        ctx.drawImage(image, item.x + padding, item.y + padding);
     }
 
     const buffer = canvas.toBuffer("image/png");
@@ -117,7 +119,12 @@ async function createSpritesheet(tree: Tree, outFile: string): Promise<Spriteshe
 
     const resultMap = new Map<string, {x: number, y: number, width: number, height: number}>();
     for (const item of packed.items) {
-        resultMap.set(item.item.path, {x: item.x, y: item.y, width: item.width, height: item.height});
+        resultMap.set(item.item.path, {
+            x: item.x + padding,
+            y: item.y + padding,
+            width: item.width - padding * 2,
+            height: item.height - padding * 2,
+        });
     }
     return resultMap;
 }
