@@ -7,7 +7,7 @@
     "generate-sound-catalog": "./lib/generate-sound-catalog.js"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc",
+    "build": "rm -rf lib && tsc && chmod +x lib/generate-image-catalog.js lib/generate-sound-catalog.js",
     "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/images.ts --outSpritesheet=testOut/spritesheet.png",
     "test:sounds": "ts-node src/generate-sound-catalog.ts --assetDir=./testData/sounds --outFile=testOut/sounds.ts",
     "test": "npm run test:images && npm run test:sounds",
@@ -16,11 +16,13 @@
   "author": "Rémi Vansteelandt",
   "license": "UNLICENSED",
   "dependencies": {
+    "bin-pack": "^1.0.2",
+    "canvas": "^2.11.2",
     "image-size": "^1.0.2",
-    "spritesheet-js": "^1.2.8",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/bin-pack": "^1.0.3",
     "@types/node": "^18.11.5",
     "@types/yargs": "^17.0.32",
     "ts-node": "^10.9.1",

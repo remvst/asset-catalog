@@ -3,9 +3,8 @@
         "target": "es2020",
         "module": "commonjs",
         "declaration": true,
-        "strict": false,
+        "strict": true,
         "esModuleInterop": true,
-        "allowJs": true,
         "outDir": "./lib",
         "skipLibCheck": true
     },

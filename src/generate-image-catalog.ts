@@ -7,7 +7,11 @@ import { resolve, relative, dirname, extname, basename } from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Tree, generateTree } from './tree';
-import { default as spritesheet } from 'spritesheet-js';
+import pack from 'bin-pack';
+import { createCanvas, loadImage } from 'canvas';
+
+type Rectangle = {x: number, y: number, width: number, height: number};
+type SpritesheetResult = Map<string, Rectangle>;
 
 function importName(assetDir: string, png: string): string {
     let importName = png;
@@ -38,7 +42,7 @@ function generatedTemplateInterface(tree: Tree, name: string, indent: string = '
     return generated;
 }
 
-async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, originalFileToSpriteData: Map<string, any>): Promise<string> {
+async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, spritesheet: SpritesheetResult | null): Promise<string> {
     async function rec(tree: Tree, indent: string = '') {
         let generated = '{\n';
         for (const [subname, item] of tree.entries()) {
@@ -49,18 +53,12 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, orig
                 const dimensions = sizeOf(item);
                 const stats = await fs.stat(item);
                 const withoutExt = basename(subname, extname(subname));
-                const spriteData = originalFileToSpriteData.get(resolve(item)) || null;
+                const spriteData = spritesheet?.get(resolve(item)) || null;
                 let spriteDataStr = '';
                 if (spriteData)  {
-                    spriteData.sheet = 'SpriteSheetPng';
-
                     spriteDataStr = `{
                         sheet: SpriteSheetPng,
-                        frame: ${JSON.stringify(spriteData.frame)},
-                        rotated: ${spriteData.rotated},
-                        trimmed: ${spriteData.trimmed},
-                        spriteSourceSize: ${JSON.stringify(spriteData.spriteSourceSize)},
-                        sourceSize: ${JSON.stringify(spriteData.sourceSize)},
+                        frame: ${JSON.stringify(spriteData)},
                     }`;
                 }
 
@@ -82,6 +80,46 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, orig
     generated += `    return ${await rec(tree, '   ')};\n`;
     generated += '}\n';
     return generated;
+}
+
+async function createSpritesheet(tree: Tree, outFile: string): Promise<SpritesheetResult> {
+    const bins: (pack.Bin & {path: string})[] = [];
+
+    function generateBins(tree: Tree) {
+        for (const item of tree.values()) {
+            if (item instanceof Map) {
+                generateBins(item);
+            } else {
+                const dimensions = sizeOf(item);
+                bins.push({
+                    width: dimensions.width!,
+                    height: dimensions.height!,
+                    path: resolve(item),
+                });
+            }
+        }
+    }
+
+    generateBins(tree);
+
+    const packed = pack(bins);
+
+    const canvas = createCanvas(packed.width, packed.height);
+    const ctx = canvas.getContext('2d');
+
+    for (const item of packed.items) {
+        const image = await loadImage(item.item.path);
+        ctx.drawImage(image, item.x, item.y);
+    }
+
+    const buffer = canvas.toBuffer("image/png");
+    await fs.writeFile(outFile, buffer);
+
+    const resultMap = new Map<string, {x: number, y: number, width: number, height: number}>();
+    for (const item of packed.items) {
+        resultMap.set(item.item.path, {x: item.x, y: item.y, width: item.width, height: item.height});
+    }
+    return resultMap;
 }
 
 async function main() {
@@ -125,32 +163,9 @@ async function main() {
         imports.push(`import ${importName(argv.assetDir, png)} from './${importPath}';`);
     }
 
-    const originalFileToSpriteData = new Map<string, any>();
+    let spritesheet: SpritesheetResult | null = null;
     if (argv.outSpritesheet) {
-        const tmpDir = await fs.mkdtemp('spritesheet');
-        const params = {
-            format: 'pixi.js',
-            name: tmpDir + '/spritesheet',
-            fullpath: true,
-        };
-
-        await new Promise<void>((resolve, reject) => {
-            spritesheet(argv.assetDir + '/**/*.png', params, (err: Error) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
-
-        const spritesheetJson = JSON.parse(await fs.readFile(params.name + '.json', 'utf8'));
-        for (const [file, frame] of Object.entries(spritesheetJson.frames)) {
-            originalFileToSpriteData.set(resolve(file), frame);
-        }
-
-        await fs.rename(params.name + '.png', argv.outSpritesheet)
-        // await fs.rm(tmpDir, { recursive: true });
+        spritesheet = await createSpritesheet(tree, argv.outSpritesheet);
 
         const importPath = relative(dirname(argv.outFile), resolve(argv.outSpritesheet)).replace(/\\/g, '/');
         imports.push(`import SpriteSheetPng from './${importPath}';`);
@@ -162,21 +177,17 @@ async function main() {
     generatedFileContent += `export interface Rectangle {
         x: number;
         y: number;
-        w: number;
-        h: number;
+        width: number;
+        height: number;
     }\n`;
     generatedFileContent += `export interface SpriteData {
         sheet: string;
         frame: Rectangle;
-        rotated: boolean;
-        trimmed: boolean;
-        spriteSourceSize: Rectangle;
-        sourceSize: {w: number, h: number};
     }\n`;
     generatedFileContent += '\n\n';
     generatedFileContent += 'export type TextureCatalog<T> = ' + generatedTemplateInterface(tree, 'TextureCatalog');
     generatedFileContent += '\n\n';
-    generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree, originalFileToSpriteData);
+    generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree, spritesheet);
 
     await fs.writeFile(generatedTs, generatedFileContent);
 }
