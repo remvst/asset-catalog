@@ -7,6 +7,7 @@ import { resolve, relative, dirname, extname, basename } from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Tree, generateTree } from './tree';
+import { default as spritesheet } from 'spritesheet-js';
 
 function importName(assetDir: string, png: string): string {
     let importName = png;
@@ -37,7 +38,7 @@ function generatedTemplateInterface(tree: Tree, name: string, indent: string = '
     return generated;
 }
 
-async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Promise<string> {
+async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, originalFileToSpriteData: Map<string, any>): Promise<string> {
     async function rec(tree: Tree, indent: string = '') {
         let generated = '{\n';
         for (const [subname, item] of tree.entries()) {
@@ -48,11 +49,27 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
                 const dimensions = sizeOf(item);
                 const stats = await fs.stat(item);
                 const withoutExt = basename(subname, extname(subname));
+                const spriteData = originalFileToSpriteData.get(resolve(item)) || null;
+                let spriteDataStr = '';
+                if (spriteData)  {
+                    spriteData.sheet = 'SpriteSheetPng';
+
+                    spriteDataStr = `{
+                        sheet: SpriteSheetPng,
+                        frame: ${JSON.stringify(spriteData.frame)},
+                        rotated: ${spriteData.rotated},
+                        trimmed: ${spriteData.trimmed},
+                        spriteSourceSize: ${JSON.stringify(spriteData.spriteSourceSize)},
+                        sourceSize: ${JSON.stringify(spriteData.sourceSize)},
+                    }`;
+                }
+
                 generated += indent + `    ${lowerCamelize(withoutExt)}: createItem({
                     path: ${importName(assetDir, item)},
                     width: ${dimensions.width},
                     height: ${dimensions.height},
                     size: ${stats.size},
+                    spriteData: ${spriteDataStr},
                 }),\n`;
             }
         }
@@ -61,7 +78,7 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
     }
 
     let generated = '\n';
-    generated += 'export function createTextureCatalog<T>(createItem: (opts: {path: string, width: number, height: number, size: number}) => T): TextureCatalog<T> {\n';
+    generated += 'export function createTextureCatalog<T>(createItem: (opts: {path: string, width: number, height: number, size: number, spriteData: SpriteData}) => T): TextureCatalog<T> {\n';
     generated += `    return ${await rec(tree, '   ')};\n`;
     generated += '}\n';
     return generated;
@@ -70,17 +87,23 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
 async function main() {
     const argv = await yargs(hideBin(process.argv))
         .options({
-            'outFile': { 
-                type: 'string', 
-                default: '.', 
-                alias: 'o', 
+            'outFile': {
+                type: 'string',
+                default: 'textures.ts',
+                alias: 'o',
                 describe: 'Directory to generate the files into',
             },
-            'assetDir': { 
-                type: 'string', 
-                default: './package.json', 
-                alias: 'a', 
-                describe: 'package.json file to use for the version',
+            'assetDir': {
+                type: 'string',
+                default: '.',
+                alias: 'a',
+                describe: 'Asset directory where all the PNGs are located',
+            },
+            'outSpritesheet': {
+                type: 'string',
+                required: false,
+                alias: 's',
+                describe: 'Path to the generated spritesheet',
             }
         })
         .argv;
@@ -102,12 +125,58 @@ async function main() {
         imports.push(`import ${importName(argv.assetDir, png)} from './${importPath}';`);
     }
 
+    const originalFileToSpriteData = new Map<string, any>();
+    if (argv.outSpritesheet) {
+        const tmpDir = await fs.mkdtemp('spritesheet');
+        const params = {
+            format: 'pixi.js',
+            name: tmpDir + '/spritesheet',
+            fullpath: true,
+        };
+
+        await new Promise<void>((resolve, reject) => {
+            spritesheet(argv.assetDir + '/**/*.png', params, (err: Error) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+
+        const spritesheetJson = JSON.parse(await fs.readFile(params.name + '.json', 'utf8'));
+        for (const [file, frame] of Object.entries(spritesheetJson.frames)) {
+            originalFileToSpriteData.set(resolve(file), frame);
+        }
+
+        await fs.rename(params.name + '.png', argv.outSpritesheet)
+        // await fs.rm(tmpDir, { recursive: true });
+
+        const importPath = relative(dirname(argv.outFile), resolve(argv.outSpritesheet)).replace(/\\/g, '/');
+        imports.push(`import SpriteSheetPng from './${importPath}';`);
+    }
+
     let generatedFileContent = '';
     generatedFileContent += imports.join('\n');
     generatedFileContent += '\n\n';
+    generatedFileContent += `export interface Rectangle {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }\n`;
+    generatedFileContent += `export interface SpriteData {
+        sheet: string;
+        frame: Rectangle;
+        rotated: boolean;
+        trimmed: boolean;
+        spriteSourceSize: Rectangle;
+        sourceSize: {w: number, h: number};
+    }\n`;
+    generatedFileContent += '\n\n';
     generatedFileContent += 'export type TextureCatalog<T> = ' + generatedTemplateInterface(tree, 'TextureCatalog');
     generatedFileContent += '\n\n';
-    generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree);
+    generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree, originalFileToSpriteData);
 
     await fs.writeFile(generatedTs, generatedFileContent);
 }
