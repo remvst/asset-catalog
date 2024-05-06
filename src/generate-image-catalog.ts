@@ -54,7 +54,7 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, spri
                 const stats = await fs.stat(item);
                 const withoutExt = basename(subname, extname(subname));
                 const spriteData = spritesheet?.get(resolve(item)) || null;
-                let spriteDataStr = '';
+                let spriteDataStr = 'null';
                 if (spriteData)  {
                     spriteDataStr = `{
                         sheet: SpriteSheetPng,
@@ -82,16 +82,22 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, spri
     return generated;
 }
 
-async function createSpritesheet(tree: Tree, outFile: string): Promise<SpritesheetResult> {
+async function createSpritesheet(tree: Tree, outFile: string, excludes: string[]): Promise<SpritesheetResult> {
     const bins: (pack.Bin & {path: string})[] = [];
 
     const padding = 1;
 
     function generateBins(tree: Tree) {
-        for (const item of tree.values()) {
+        itemLoop: for (const item of tree.values()) {
             if (item instanceof Map) {
                 generateBins(item);
             } else {
+                for (const exclude of excludes) {
+                    if (item.includes(exclude)) {
+                        continue itemLoop;
+                    }
+                }
+
                 const dimensions = sizeOf(item);
                 bins.push({
                     width: dimensions.width! + padding * 2,
@@ -149,7 +155,14 @@ async function main() {
                 required: false,
                 alias: 's',
                 describe: 'Path to the generated spritesheet',
-            }
+            },
+            'spritesheetExclude': {
+                type: 'string',
+                array: true,
+                required: false,
+                alias: 'x',
+                describe: 'Exclude certain paths from the spritesheet',
+            },
         })
         .argv;
 
@@ -172,7 +185,7 @@ async function main() {
 
     let spritesheet: SpritesheetResult | null = null;
     if (argv.outSpritesheet) {
-        spritesheet = await createSpritesheet(tree, argv.outSpritesheet);
+        spritesheet = await createSpritesheet(tree, argv.outSpritesheet, argv.spritesheetExclude || []);
 
         const importPath = relative(dirname(argv.outFile), resolve(argv.outSpritesheet)).replace(/\\/g, '/');
         imports.push(`import SpriteSheetPng from './${importPath}';`);
