@@ -17,9 +17,9 @@ async function main() {
             },
             'assetDir': {
                 type: 'string',
-                default: './package.json',
+                default: '.',
                 alias: 'a',
-                describe: 'package.json file to use for the version',
+                describe: 'Asset directory where all the PNGs are located',
             },
             'wav': {
                 type: 'boolean',
