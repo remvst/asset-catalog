@@ -4,7 +4,8 @@ import { promises as fs } from 'fs';
 import { sanitize, allFiles, categoryPath } from './utils';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-import { dirname, extname, basename, relative } from 'path';
+import { dirname, extname, basename, relative, parse } from 'path';
+import audiosprite from 'audiosprite';
 
 async function main() {
     const argv = await yargs(hideBin(process.argv))
@@ -36,6 +37,19 @@ async function main() {
                 default: true,
                 describe: 'Include .mp3 files',
             },
+            'outSpritesheet': {
+                type: 'string',
+                required: false,
+                describe: 'Path to the exported spritesheet (without the extension)',
+            },
+            'spritesheetExcludeCategory': {
+                type: 'string',
+                array: true,
+                required: false,
+                alias: 'x',
+                default: [] as string[],
+                describe: 'Exclude certain categories from the spritesheet',
+            },
         })
         .argv;
 
@@ -51,7 +65,8 @@ async function main() {
 
 
     const files = await allFiles(argv.assetDir);
-    const sounds = files.filter(file => extensions.indexOf(extname(file)) >= 0);
+    const sounds = files.filter(file => extensions.indexOf(extname(file)) >= 0)
+        .filter(file => basename(file, extname(file)) !== 'sprites');
 
     const defs = new Map<string, Map<string, Set<string>>>();
 
@@ -71,6 +86,59 @@ async function main() {
         defs.get(category)!.get(filenameWithoutExt)!.add(sound);
     }
 
+    const spriteSounds: Map<string, string> = new Map();
+
+    let spritesheetJson: any = null;
+    if (argv.outSpritesheet) {
+        for (const category of defs.keys()) {
+            let isCategoryExcluded = false;
+            for (const exclusion of argv.spritesheetExcludeCategory) {
+                if (category.indexOf(exclusion) !== -1) {
+                    isCategoryExcluded = true;
+                    break;
+                }
+            }
+            if (isCategoryExcluded) {
+                continue;
+            }
+
+            for (const filenameWithoutExt of defs.get(category)!.keys()) {
+                const fileSet = defs.get(category)!.get(filenameWithoutExt)!;
+
+                const files = Array.from(fileSet);
+                const pickedFile = files.find(file => extname(file) === '.wav') ||
+                    files.find(file => extname(file) === '.ogg') ||
+                    files.find(file => extname(file) === '.mp3');
+                if (!pickedFile) {
+                    throw new Error('Unable to pick file for sprite in ' + category);
+                }
+                spriteSounds.set(category + '/' + filenameWithoutExt, pickedFile);
+            }
+        }
+
+        spritesheetJson = await new Promise((resolve, reject) => {
+            const formats = [
+                argv.ogg ? 'ogg' : null,
+                argv.mp3 ? 'mp3' : null,
+                argv.wav ? 'wav' : null,
+            ].filter(x => x);
+
+            const options: audiosprite.Option = {
+                output: argv.outSpritesheet,
+                format: 'howler',
+                export: formats.join(','),
+            }
+
+            audiosprite(Array.from(spriteSounds.values()), options, (err, res) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(res);
+                }
+            });
+        });
+    }
+
     const imports = [];
     const definitions = [];
     const funcs = [];
@@ -80,10 +148,18 @@ async function main() {
     soundDefinition += '    constructor(\n';
     soundDefinition += '        readonly basename: string,\n';
     soundDefinition += '        readonly files: string[],\n';
+    soundDefinition += '        readonly sprite: string | null,\n';
     soundDefinition += '        readonly averageFileSize: number,\n';
     soundDefinition += '    ) {}\n';
     soundDefinition += '}\n';
     definitions.push(soundDefinition);
+
+    if (spritesheetJson) {
+        let spriteSheetFunc = 'export function sound_spritesheet() {\n';
+        spriteSheetFunc += '    return ' + JSON.stringify(spritesheetJson, null, 4) + ';\n';
+        spriteSheetFunc += '};\n';
+        funcs.push(spriteSheetFunc);
+    }
 
     for (const category of defs.keys()) {
         let func = `export function sound_${category}(): SoundDefinition[] {\n`;
@@ -111,7 +187,10 @@ async function main() {
 
             const averageFileSize = Math.round(totalFileSize / files.length);
 
+            const hasSprite = spriteSounds.get(category + '/' + filenameWithoutExt)!;
+
             func += '            ],\n';
+            func += `            ${JSON.stringify(hasSprite ? filenameWithoutExt : null)},\n`;
             func += `            ${averageFileSize},\n`;
             func += '        ),\n';
         }
