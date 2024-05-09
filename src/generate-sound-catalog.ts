@@ -117,17 +117,11 @@ async function main() {
         }
 
         spritesheetJson = await new Promise((resolve, reject) => {
-            const formats = [
-                argv.ogg ? 'ogg' : null,
-                argv.mp3 ? 'mp3' : null,
-                argv.wav ? 'wav' : null,
-            ].filter(x => x);
-
             const options: audiosprite.Option = {
                 output: argv.outSpritesheet,
                 format: 'howler',
-                export: formats.join(','),
-            }
+                export: extensions.map(ext => ext.slice(1)).join(','),
+            };
 
             audiosprite(Array.from(spriteSounds.values()), options, (err, res) => {
                 if (err) {
@@ -154,9 +148,37 @@ async function main() {
     soundDefinition += '}\n';
     definitions.push(soundDefinition);
 
-    if (spritesheetJson) {
+    if (argv.outSpritesheet) {
+        const modifiedSpritesheetJson = { ...spritesheetJson };
+        modifiedSpritesheetJson.urls = extensions.map(ext => argv.outSpritesheet + ext);
+
         let spriteSheetFunc = 'export function sound_spritesheet() {\n';
-        spriteSheetFunc += '    return ' + JSON.stringify(spritesheetJson, null, 4) + ';\n';
+        spriteSheetFunc += '    return {\n';
+        spriteSheetFunc += '        urls: [\n';
+
+
+        const idealOrder = ['.ogg', '.mp3', '.wav'];
+        const sortedExtensions = extensions.sort((a, b) => idealOrder.indexOf(a) - idealOrder.indexOf(b));
+        for (const extension of sortedExtensions) {
+            const importName = 'sprites_' + extension.slice(1);
+            imports.push(`import ${importName} from '${relative(dirname(argv.outFile), argv.outSpritesheet + extension).replace(/\\/g, '/')}';`);
+
+            spriteSheetFunc += `            ${importName},\n`;
+        }
+
+        let totalFileSize = 0;
+        for (const extension of sortedExtensions) {
+            const soundFile = argv.outSpritesheet + extension;
+            const stats = await fs.stat(soundFile);
+            totalFileSize += stats.size;
+        }
+
+        const averageFileSize = Math.round(totalFileSize / files.length);
+
+        spriteSheetFunc += '        ],\n';
+        spriteSheetFunc += `        sprite: ${JSON.stringify(spritesheetJson.sprite)},\n`;
+        spriteSheetFunc += `        averageFileSize: ${averageFileSize},\n`;
+        spriteSheetFunc += '    }\n';
         spriteSheetFunc += '};\n';
         funcs.push(spriteSheetFunc);
     }
