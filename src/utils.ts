@@ -34,8 +34,8 @@ export function lowerCamelize(str: string): string {
     return camelized.slice(0, 1).toLowerCase() + camelized.slice(1);
 }
 
-export function categoryPath(assetDir: string, png: string): string[] {
-    const dir = dirname(png);
+export function categoryPath(assetDir: string, filepath: string): string[] {
+    const dir = dirname(filepath);
     const trimmedDir = relative(assetDir, dir);
     return trimmedDir
         .split(/[\/\\]/g)
