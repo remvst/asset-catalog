@@ -84,7 +84,7 @@ function generateExpandFunction() {
     generated += 'function expandSpriteData(sheet: string, x: number, y: number, width: number, height: number): SpriteData {\n';
     generated += `    return { sheet, frame: { x, y, width, height } };\n`;
     generated += '}\n\n';
-    generated += 'function expand(path: string, width: number, height: number, size: number, spriteData: SpriteData): CreateItemOptions {\n';
+    generated += 'function expand(path: string, width: number, height: number, size: number, spriteData: SpriteData | null = null): CreateItemOptions {\n';
     generated += `    return { path, width, height, size, spriteData };\n`;
     generated += '}\n';
     return generated;
