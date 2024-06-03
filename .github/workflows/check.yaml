@@ -14,6 +14,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - uses: FedericoCarboni/setup-ffmpeg@v2
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Install dependencies
