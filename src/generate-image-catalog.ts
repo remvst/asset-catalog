@@ -54,21 +54,18 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, spri
                 const stats = await fs.stat(item);
                 const withoutExt = basename(subname, extname(subname));
                 const spriteData = spritesheet?.get(resolve(item)) || null;
-                let spriteDataStr = 'null';
+                let spriteDataArr: string | null = null;
                 if (spriteData)  {
-                    spriteDataStr = `{
-                        sheet: SpriteSheetPng,
-                        frame: ${JSON.stringify(spriteData)},
-                    }`;
+                    spriteDataArr = `expandSpriteData(SpriteSheetPng, ${spriteData.x}, ${spriteData.y}, ${spriteData.width}, ${spriteData.height})`;
                 }
 
-                generated += indent + `    ${lowerCamelize(withoutExt)}: createItem({
-                    path: ${importName(assetDir, item)},
-                    width: ${dimensions.width},
-                    height: ${dimensions.height},
-                    size: ${stats.size},
-                    spriteData: ${spriteDataStr},
-                }),\n`;
+                generated += indent + `    ${lowerCamelize(withoutExt)}: createItem(expand(
+                    ${importName(assetDir, item)},
+                    ${dimensions.width},
+                    ${dimensions.height},
+                    ${stats.size},
+                    ${spriteData ? spriteDataArr : ''}
+                )),\n`;
             }
         }
         generated += indent + '}';
@@ -76,8 +73,19 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree, spri
     }
 
     let generated = '\n';
-    generated += 'export function createTextureCatalog<T>(createItem: (opts: {path: string, width: number, height: number, size: number, spriteData: SpriteData}) => T): TextureCatalog<T> {\n';
+    generated += 'export function createTextureCatalog<T>(createItem: (opts: CreateItemOptions) => T): TextureCatalog<T> {\n';
     generated += `    return ${await rec(tree, '   ')};\n`;
+    generated += '}\n';
+    return generated;
+}
+
+function generateExpandFunction() {
+    let generated = '\n';
+    generated += 'function expandSpriteData(sheet: string, x: number, y: number, width: number, height: number): SpriteData {\n';
+    generated += `    return { sheet, frame: { x, y, width, height } };\n`;
+    generated += '}\n\n';
+    generated += 'function expand(path: string, width: number, height: number, size: number, spriteData: SpriteData): CreateItemOptions {\n';
+    generated += `    return { path, width, height, size, spriteData };\n`;
     generated += '}\n';
     return generated;
 }
@@ -199,14 +207,21 @@ async function main() {
         y: number;
         width: number;
         height: number;
-    }\n`;
+    }\n\n`;
     generatedFileContent += `export interface SpriteData {
         sheet: string;
         frame: Rectangle;
-    }\n`;
-    generatedFileContent += '\n\n';
+    }\n\n`;
+    generatedFileContent += `export interface CreateItemOptions {
+        path: string;
+        width: number;
+        height: number;
+        size: number;
+        spriteData: SpriteData | null;   
+    }\n\n`;
     generatedFileContent += 'export type TextureCatalog<T> = ' + generatedTemplateInterface(tree, 'TextureCatalog');
     generatedFileContent += '\n\n';
+    generatedFileContent += generateExpandFunction();
     generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree, spritesheet);
 
     await fs.writeFile(generatedTs, generatedFileContent);
