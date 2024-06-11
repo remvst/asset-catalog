@@ -90,6 +90,19 @@ function generateExpandFunction() {
     return generated;
 }
 
+function generateResolveFunction() {
+    let generated = '\n';
+    generated += 'export function resolveFromCatalog<T>(catalog: TextureCatalog<T>, path: string[]): T {\n';
+    generated += '    let current = catalog;\n';
+    generated += `    for (const component of path) {\n`;
+    generated += `        if (!(component in current)) throw new Error('Unresolvable catalog path: ' + path.join('.'));\n`;
+    generated += `        current = current[component];\n`;
+    generated += `    }\n`;
+    generated += `    return current as T;\n`;
+    generated += '}\n';
+    return generated;
+}
+
 async function createSpritesheet(tree: Tree, outFile: string, excludes: string[]): Promise<SpritesheetResult> {
     const bins: (pack.Bin & {path: string})[] = [];
 
@@ -217,11 +230,12 @@ async function main() {
         width: number;
         height: number;
         size: number;
-        spriteData: SpriteData | null;   
+        spriteData: SpriteData | null;
     }\n\n`;
     generatedFileContent += 'export type TextureCatalog<T> = ' + generatedTemplateInterface(tree, 'TextureCatalog');
     generatedFileContent += '\n\n';
     generatedFileContent += generateExpandFunction();
+    generatedFileContent += generateResolveFunction();
     generatedFileContent += await generatedCreateCatalogFunction(argv.assetDir, tree, spritesheet);
 
     await fs.writeFile(generatedTs, generatedFileContent);
