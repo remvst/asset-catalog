@@ -1,16 +1,18 @@
 {
   "name": "@remvst/asset-catalog",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "",
   "bin": {
     "generate-image-catalog": "./lib/generate-image-catalog.js",
-    "generate-sound-catalog": "./lib/generate-sound-catalog.js"
+    "generate-sound-catalog": "./lib/generate-sound-catalog.js",
+    "generate-file-catalog": "./lib/generate-file-catalog.js"
   },
   "scripts": {
     "build": "rm -rf lib && tsc && chmod +x lib/generate-image-catalog.js lib/generate-sound-catalog.js",
     "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/images.ts --outSpritesheet=testOut/spritesheet.png",
     "test:sounds": "ts-node src/generate-sound-catalog.ts --assetDir=./testData/sounds --outFile=testOut/sounds.ts --outSpritesheet=testData/sounds/sprites --spritesheetExcludeCategory=jump",
-    "test": "npm run test:images && npm run test:sounds",
+    "test:files": "ts-node src/generate-file-catalog.ts --dir=./testData --outFile=testOut/files.ts",
+    "test": "npm run test:images && npm run test:sounds && npm run test:files",
     "prepublishOnly": "npm i && npm run build"
   },
   "author": "Rémi Vansteelandt",

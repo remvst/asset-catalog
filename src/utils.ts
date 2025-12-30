@@ -30,7 +30,7 @@ export function camelize(str: string) {
 }
 
 export function lowerCamelize(str: string): string {
-    const camelized = module.exports.camelize(str);
+    const camelized = camelize(str);
     return camelized.slice(0, 1).toLowerCase() + camelized.slice(1);
 }
 

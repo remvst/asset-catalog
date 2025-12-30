@@ -16,7 +16,7 @@ export async function generateTree(dir: string, files: string[]): Promise<Tree> 
             subtree = subtree.get(category);
         }
 
-        subtree.set(basename(file).replace('.file', ''), file);
+        subtree.set(basename(file), file);
     }
 
     return tree;
