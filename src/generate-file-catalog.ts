@@ -50,6 +50,7 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
                 generated += indent + `    ${lowerCamelize(name)}: createItem(expand(
                     ${importName(assetDir, item)},
                     ${stats.size},
+                    '${item}',
                 )),\n`;
             }
         }
@@ -66,8 +67,8 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
 
 function generateExpandFunction() {
     let generated = '';
-    generated += 'function expand(path: string, size: number): CreateItemOptions {\n';
-    generated += `    return { path, size };\n`;
+    generated += 'function expand(path: string, size: number, originalPath: string): CreateItemOptions {\n';
+    generated += `    return { path, size, originalPath };\n`;
     generated += '}\n';
     return generated;
 }
@@ -126,6 +127,7 @@ async function main() {
     generatedFileContent += `export interface CreateItemOptions {
         path: string;
         size: number;
+        originalPath: string;
     }\n\n`;
     generatedFileContent += 'export type FileCatalog<T> = ' + generatedTemplateInterface(tree);
     generatedFileContent += '\n';
