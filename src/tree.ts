@@ -1,5 +1,5 @@
-import { basename } from "path";
-import { categoryPath } from "./utils";
+import { basename } from 'path';
+import { categoryPath } from './utils';
 
 export type Tree = Map<string, TreeOrPath>;
 export type TreeOrPath = Tree | string;

@@ -1,38 +1,38 @@
 {
-  "name": "@remvst/asset-catalog",
-  "version": "1.5.0",
-  "description": "",
-  "bin": {
-    "generate-image-catalog": "./lib/generate-image-catalog.js",
-    "generate-sound-catalog": "./lib/generate-sound-catalog.js",
-    "generate-file-catalog": "./lib/generate-file-catalog.js"
-  },
-  "scripts": {
-    "build": "rm -rf lib && tsc && chmod +x lib/generate-image-catalog.js lib/generate-sound-catalog.js",
-    "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/images.ts --outSpritesheet=testOut/spritesheet.png",
-    "test:sounds": "ts-node src/generate-sound-catalog.ts --assetDir=./testData/sounds --outFile=testOut/sounds.ts --outSpritesheet=testData/sounds/sprites --spritesheetExcludeCategory=jump",
-    "test:files": "ts-node src/generate-file-catalog.ts --dir=./testData --outFile=testOut/files.ts",
-    "prettier:check": "prettier --check .",
-    "prettier:write": "prettier --write .",
-    "test": "npm run prettier:check && npm run test:images && npm run test:sounds && npm run test:files",
-    "prepublishOnly": "npm i && npm run build"
-  },
-  "author": "Rémi Vansteelandt",
-  "license": "UNLICENSED",
-  "dependencies": {
-    "audiosprite": "^0.7.2",
-    "bin-pack": "^1.0.2",
-    "canvas": "^2.11.2",
-    "image-size": "^1.0.2",
-    "yargs": "^17.7.2"
-  },
-  "devDependencies": {
-    "@types/audiosprite": "^0.7.3",
-    "@types/bin-pack": "^1.0.3",
-    "@types/node": "^18.11.5",
-    "@types/yargs": "^17.0.32",
-    "prettier": "^3.8.1",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
-  }
+    "name": "@remvst/asset-catalog",
+    "version": "1.5.0",
+    "description": "",
+    "bin": {
+        "generate-image-catalog": "./lib/generate-image-catalog.js",
+        "generate-sound-catalog": "./lib/generate-sound-catalog.js",
+        "generate-file-catalog": "./lib/generate-file-catalog.js"
+    },
+    "scripts": {
+        "build": "rm -rf lib && tsc && chmod +x lib/generate-image-catalog.js lib/generate-sound-catalog.js",
+        "test:images": "ts-node src/generate-image-catalog.ts --assetDir=./testData --outFile=testOut/images.ts --outSpritesheet=testOut/spritesheet.png",
+        "test:sounds": "ts-node src/generate-sound-catalog.ts --assetDir=./testData/sounds --outFile=testOut/sounds.ts --outSpritesheet=testData/sounds/sprites --spritesheetExcludeCategory=jump",
+        "test:files": "ts-node src/generate-file-catalog.ts --dir=./testData --outFile=testOut/files.ts",
+        "prettier:check": "prettier --check .",
+        "prettier:write": "prettier --write .",
+        "test": "npm run prettier:check && npm run test:images && npm run test:sounds && npm run test:files",
+        "prepublishOnly": "npm i && npm run build"
+    },
+    "author": "Rémi Vansteelandt",
+    "license": "UNLICENSED",
+    "dependencies": {
+        "audiosprite": "^0.7.2",
+        "bin-pack": "^1.0.2",
+        "canvas": "^2.11.2",
+        "image-size": "^1.0.2",
+        "yargs": "^17.7.2"
+    },
+    "devDependencies": {
+        "@types/audiosprite": "^0.7.3",
+        "@types/bin-pack": "^1.0.3",
+        "@types/node": "^18.11.5",
+        "@types/yargs": "^17.0.32",
+        "prettier": "^3.8.1",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.2.2"
+    }
 }

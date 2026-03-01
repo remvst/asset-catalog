@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import {promises as fs} from 'fs';
-import {allFiles, lowerCamelize, sanitize} from './utils';
-import {basename, dirname, extname, relative, resolve} from 'path';
+import { promises as fs } from 'fs';
+import { allFiles, lowerCamelize, sanitize } from './utils';
+import { basename, dirname, extname, relative, resolve } from 'path';
 import yargs from 'yargs/yargs';
-import {hideBin} from 'yargs/helpers';
-import {generateTree, Tree} from './tree';
+import { hideBin } from 'yargs/helpers';
+import { generateTree, Tree } from './tree';
 
 function importName(assetDir: string, file: string): string {
     let importName = file;
@@ -47,7 +47,9 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
                 const stats = await fs.stat(item);
                 const name = basename(subname);
 
-                generated += indent + `    ${lowerCamelize(name)}: createItem(expand(
+                generated +=
+                    indent +
+                    `    ${lowerCamelize(name)}: createItem(expand(
                     ${importName(assetDir, item)},
                     ${stats.size},
                     '${item}',
@@ -59,7 +61,8 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
     }
 
     let generated = '';
-    generated += 'export function createFileCatalog<T>(createItem: (opts: CreateItemOptions) => T): FileCatalog<T> {\n';
+    generated +=
+        'export function createFileCatalog<T>(createItem: (opts: CreateItemOptions) => T): FileCatalog<T> {\n';
     generated += `    return ${await rec(tree, '   ')};\n`;
     generated += '}\n';
     return generated;
@@ -67,7 +70,8 @@ async function generatedCreateCatalogFunction(assetDir: string, tree: Tree): Pro
 
 function generateExpandFunction() {
     let generated = '';
-    generated += 'function expand(path: string, size: number, originalPath: string): CreateItemOptions {\n';
+    generated +=
+        'function expand(path: string, size: number, originalPath: string): CreateItemOptions {\n';
     generated += `    return { path, size, originalPath };\n`;
     generated += '}\n';
     return generated;
@@ -75,7 +79,8 @@ function generateExpandFunction() {
 
 function generateResolveFunction() {
     let generated = '';
-    generated += 'export function resolveFromCatalog<T>(catalog: FileCatalog<T>, path: string[]): T {\n';
+    generated +=
+        'export function resolveFromCatalog<T>(catalog: FileCatalog<T>, path: string[]): T {\n';
     generated += '    let current: any = catalog;\n';
     generated += `    for (const component of path) {\n`;
     generated += `        if (!(component in current)) throw new Error('Unresolvable catalog path: ' + path.join('.'));\n`;
@@ -87,29 +92,26 @@ function generateResolveFunction() {
 }
 
 async function main() {
-    const argv = await yargs(hideBin(process.argv))
-        .options({
-            'outFile': {
-                type: 'string',
-                default: 'files.ts',
-                alias: 'o',
-                describe: 'Directory to generate the files into',
-            },
-            'dir': {
-                type: 'string',
-                default: '.',
-                alias: 'd',
-                describe: 'Asset directory where all the PNGs are located',
-            },
-        })
-        .argv;
+    const argv = await yargs(hideBin(process.argv)).options({
+        outFile: {
+            type: 'string',
+            default: 'files.ts',
+            alias: 'o',
+            describe: 'Directory to generate the files into',
+        },
+        dir: {
+            type: 'string',
+            default: '.',
+            alias: 'd',
+            describe: 'Asset directory where all the PNGs are located',
+        },
+    }).argv;
 
     const filesRoot = argv.dir;
     const generatedTs = argv.outFile;
     try {
-        await fs.rm(generatedTs, {'recursive': true});
-    } catch (e) {
-    }
+        await fs.rm(generatedTs, { recursive: true });
+    } catch (e) {}
 
     const files = await allFiles(filesRoot);
 

@@ -26,7 +26,10 @@ export function sanitize(string: string): string {
 }
 
 export function camelize(str: string) {
-    return str.split(/[^a-z0-9]/gi).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+    return str
+        .split(/[^a-z0-9]/gi)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('');
 }
 
 export function lowerCamelize(str: string): string {
@@ -39,6 +42,6 @@ export function categoryPath(assetDir: string, filepath: string): string[] {
     const trimmedDir = relative(assetDir, dir);
     return trimmedDir
         .split(/[\/\\]/g)
-        .map(component => lowerCamelize(component))
-        .filter(component => component.length > 0);
+        .map((component) => lowerCamelize(component))
+        .filter((component) => component.length > 0);
 }

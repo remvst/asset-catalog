@@ -8,50 +8,48 @@ import { dirname, extname, basename, relative, parse } from 'path';
 import audiosprite from 'audiosprite';
 
 async function main() {
-    const argv = await yargs(hideBin(process.argv))
-        .options({
-            'outFile': {
-                type: 'string',
-                default: '.',
-                alias: 'o',
-                describe: 'Directory to generate the files into',
-            },
-            'assetDir': {
-                type: 'string',
-                default: '.',
-                alias: 'a',
-                describe: 'Asset directory where all the PNGs are located',
-            },
-            'wav': {
-                type: 'boolean',
-                default: false,
-                describe: 'Include .wav files',
-            },
-            'ogg': {
-                type: 'boolean',
-                default: true,
-                describe: 'Include .ogg files',
-            },
-            'mp3': {
-                type: 'boolean',
-                default: true,
-                describe: 'Include .mp3 files',
-            },
-            'outSpritesheet': {
-                type: 'string',
-                required: false,
-                describe: 'Path to the exported spritesheet (without the extension)',
-            },
-            'spritesheetExcludeCategory': {
-                type: 'string',
-                array: true,
-                required: false,
-                alias: 'x',
-                default: [] as string[],
-                describe: 'Exclude certain categories from the spritesheet',
-            },
-        })
-        .argv;
+    const argv = await yargs(hideBin(process.argv)).options({
+        outFile: {
+            type: 'string',
+            default: '.',
+            alias: 'o',
+            describe: 'Directory to generate the files into',
+        },
+        assetDir: {
+            type: 'string',
+            default: '.',
+            alias: 'a',
+            describe: 'Asset directory where all the PNGs are located',
+        },
+        wav: {
+            type: 'boolean',
+            default: false,
+            describe: 'Include .wav files',
+        },
+        ogg: {
+            type: 'boolean',
+            default: true,
+            describe: 'Include .ogg files',
+        },
+        mp3: {
+            type: 'boolean',
+            default: true,
+            describe: 'Include .mp3 files',
+        },
+        outSpritesheet: {
+            type: 'string',
+            required: false,
+            describe: 'Path to the exported spritesheet (without the extension)',
+        },
+        spritesheetExcludeCategory: {
+            type: 'string',
+            array: true,
+            required: false,
+            alias: 'x',
+            default: [] as string[],
+            describe: 'Exclude certain categories from the spritesheet',
+        },
+    }).argv;
 
     const extensions: string[] = [];
     if (argv.mp3) extensions.push('.mp3');
@@ -60,13 +58,13 @@ async function main() {
 
     const generatedTs = argv.outFile;
     try {
-        await fs.rm(generatedTs, { 'recursive': true });
+        await fs.rm(generatedTs, { recursive: true });
     } catch (e) {}
 
-
     const files = await allFiles(argv.assetDir);
-    const sounds = files.filter(file => extensions.indexOf(extname(file)) >= 0)
-        .filter(file => basename(file, extname(file)) !== 'sprites');
+    const sounds = files
+        .filter((file) => extensions.indexOf(extname(file)) >= 0)
+        .filter((file) => basename(file, extname(file)) !== 'sprites');
 
     const defs = new Map<string, Map<string, Set<string>>>();
 
@@ -106,9 +104,10 @@ async function main() {
                 const fileSet = defs.get(category)!.get(filenameWithoutExt)!;
 
                 const files = Array.from(fileSet);
-                const pickedFile = files.find(file => extname(file) === '.wav') ||
-                    files.find(file => extname(file) === '.ogg') ||
-                    files.find(file => extname(file) === '.mp3');
+                const pickedFile =
+                    files.find((file) => extname(file) === '.wav') ||
+                    files.find((file) => extname(file) === '.ogg') ||
+                    files.find((file) => extname(file) === '.mp3');
                 if (!pickedFile) {
                     throw new Error('Unable to pick file for sprite in ' + category);
                 }
@@ -120,7 +119,7 @@ async function main() {
             const options: audiosprite.Option = {
                 output: argv.outSpritesheet,
                 format: 'howler',
-                export: extensions.map(ext => ext.slice(1)).join(','),
+                export: extensions.map((ext) => ext.slice(1)).join(','),
             };
 
             audiosprite(Array.from(spriteSounds.values()), options, (err, res) => {
@@ -150,18 +149,21 @@ async function main() {
 
     if (argv.outSpritesheet) {
         const modifiedSpritesheetJson = { ...spritesheetJson };
-        modifiedSpritesheetJson.urls = extensions.map(ext => argv.outSpritesheet + ext);
+        modifiedSpritesheetJson.urls = extensions.map((ext) => argv.outSpritesheet + ext);
 
         let spriteSheetFunc = 'export function sound_spritesheet() {\n';
         spriteSheetFunc += '    return {\n';
         spriteSheetFunc += '        urls: [\n';
 
-
         const idealOrder = ['.ogg', '.mp3', '.wav'];
-        const sortedExtensions = extensions.sort((a, b) => idealOrder.indexOf(a) - idealOrder.indexOf(b));
+        const sortedExtensions = extensions.sort(
+            (a, b) => idealOrder.indexOf(a) - idealOrder.indexOf(b),
+        );
         for (const extension of sortedExtensions) {
             const importName = 'sprites_' + extension.slice(1);
-            imports.push(`import ${importName} from '${relative(dirname(argv.outFile), argv.outSpritesheet + extension).replace(/\\/g, '/')}';`);
+            imports.push(
+                `import ${importName} from '${relative(dirname(argv.outFile), argv.outSpritesheet + extension).replace(/\\/g, '/')}';`,
+            );
 
             spriteSheetFunc += `            ${importName},\n`;
         }
@@ -201,7 +203,9 @@ async function main() {
             let totalFileSize = 0;
             for (const soundFile of files) {
                 const importName = sanitize(soundFile);
-                imports.push(`import ${importName} from '${relative(dirname(argv.outFile), soundFile).replace(/\\/g, '/')}';`);
+                imports.push(
+                    `import ${importName} from '${relative(dirname(argv.outFile), soundFile).replace(/\\/g, '/')}';`,
+                );
                 func += `                ${importName},\n`;
                 const stats = await fs.stat(soundFile);
                 totalFileSize += stats.size;
